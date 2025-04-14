@@ -87,9 +87,9 @@ try {
     $finalIntuneWinPath = Join-Path -Path $outputBundleFullPath -ChildPath $finalIntuneWinName
     Write-Host "Moving .intunewin file to $finalIntuneWinPath"
     Move-Item -Path $stagedIntuneWinPath -Destination $finalIntuneWinPath -Force
-    $outputScriptsDir = Join-Path -Path $outputBundleFullPath -ChildPath "DeploymentScripts"
-    Write-Host "Copying deployment scripts to output bundle at $outputScriptsDir"
-    Copy-Item -Path $stagingScriptsDir -Destination $outputScriptsDir -Recurse -Force
+    # $outputScriptsDir = Join-Path -Path $outputBundleFullPath -ChildPath "DeploymentScripts"
+    Write-Host "Copying detection script to output bundle at $outputBundleFullPath"
+    Copy-Item -Path (Join-Path -Path $stagingScriptsDir -ChildPath "Detect.ps1") -Destination $outputBundleFullPath -Recurse -Force
 
     # 6. Prepare Variables for instructions Template
     Write-Host "Preparing variables for instructions template processing..."
