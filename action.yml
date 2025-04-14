@@ -1,9 +1,8 @@
 # .github/actions/package-intune-app/action.yml
 name: 'Package for Intune Win32 Deployment'
-description: 'Packages an application source folder and specified scripts into an .intunewin file and creates output bundles, processing a INSTRUCTIONS template.' # Updated desc
-author: 'Your Name/Org'
+description: 'Packages an application source folder and specified scripts into an .intunewin file and creates output bundles, processing a INSTRUCTIONS template.'
+author: 'Carter Strickland'
 
-# --- (Inputs remain the same as previous version) ---
 inputs:
   app_source_folder_path:
     description: 'Path to the FOLDER containing the main application installer and any dependencies (relative to the workspace root).'
@@ -28,7 +27,7 @@ inputs:
   app_name:
     description: 'The application name to use for the .intunewin file and instructions.'
     required: true
-# --- (Outputs remain the same) ---
+
 outputs:
   output_bundle_path:
     description: 'The workspace-relative path to the generated output bundle folder.'
@@ -40,13 +39,11 @@ outputs:
 runs:
   using: "composite"
   steps:
-  # Step 1: Download IntuneWinAppUtil.exe (No changes needed)
+  # Step 1: Download IntuneWinAppUtil.exe
   - name: Download and Extract IntuneWinAppUtil.exe
     shell: pwsh
     run: |
-      # --- (Script content remains the same as previous version) ---
       $downloadUrl = "https://github.com/microsoft/Microsoft-Win32-Content-Prep-Tool/raw/master/IntuneWinAppUtil.exe"; $actionPath = "${{ github.action_path }}"; $finalExePath = Join-Path $actionPath "IntuneWinAppUtil.exe"; if (Test-Path -Path $finalExePath -PathType Leaf) { Write-Host "IntuneWinAppUtil.exe already found at $finalExePath." } else { Write-Host "Downloading IntuneWinAppUtil.exe from $downloadUrl"; try { Invoke-WebRequest -Uri $downloadUrl -OutFile $finalExePath -UseBasicParsing -ErrorAction Stop; Write-Host "Successfully downloaded IntuneWinAppUtil.exe to $finalExePath" } catch { Write-Error "An error occurred during the download process: $($_.Exception.Message)"; Write-Warning "Attempting fallback download via zipball..."; $zipDownloadUrl = "https://github.com/microsoft/Microsoft-Win32-Content-Prep-Tool/zipball/master"; $zipFileName = "IntuneWinAppUtil_master.zip"; $zipOutputPath = Join-Path $actionPath $zipFileName; $extractBasePath = Join-Path $actionPath "extracted_tool"; try { Invoke-WebRequest -Uri $zipDownloadUrl -OutFile $zipOutputPath -UseBasicParsing -ErrorAction Stop; if (Test-Path $extractBasePath) { Remove-Item -Path $extractBasePath -Recurse -Force -EA SilentlyContinue }; New-Item -Path $extractBasePath -ItemType Directory -Force | Out-Null; Expand-Archive -Path $zipOutputPath -DestinationPath $extractBasePath -Force -ErrorAction Stop; $foundExe = Get-ChildItem -Path $extractBasePath -Recurse -Filter "IntuneWinAppUtil.exe" | Select-Object -First 1; if ($null -ne $foundExe) { Move-Item -Path $foundExe.FullName -Destination $finalExePath -Force -ErrorAction Stop; Write-Host "Successfully downloaded and extracted IntuneWinAppUtil.exe to $finalExePath via fallback." } else { Write-Error "Fallback failed: IntuneWinAppUtil.exe could not be found within the extracted archive!"; exit 1 } } catch { Write-Error "Fallback download/extraction also failed: $($_.Exception.Message)"; exit 1 } finally { if (Test-Path $zipOutputPath) { Remove-Item -Path $zipOutputPath -Force -EA SilentlyContinue }; if (Test-Path $extractBasePath) { Remove-Item -Path $extractBasePath -Recurse -Force -EA SilentlyContinue } } } }
-      # --- (End of unchanged download script) ---
 
   # Step 2: Run the Packager Script (Creates structure, .intunewin, and outputs variables)
   - name: Run Intune Packager Script
@@ -54,7 +51,7 @@ runs:
     shell: pwsh
     run: |
       # Resolve relative paths from workspace root to full paths
-      $appSourceFullPath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.app_source_folder_path }}" # Renamed variable
+      $appSourceFullPath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.app_source_folder_path }}"
       $installFullPath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.install_script_path }}"
       $uninstallFullPath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.uninstall_script_path }}"
       $detectionFullPath = "" # Initialize empty
@@ -62,24 +59,22 @@ runs:
         $detectionFullPath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ inputs.detection_script_path }}"
       }
 
-      Write-Host "App Source Folder: $appSourceFullPath" # Updated label
+      Write-Host "App Source Folder: $appSourceFullPath"
       Write-Host "Install Script: $installFullPath"
       Write-Host "Uninstall Script: $uninstallFullPath"
-      if ($detectionFullPath) {
-        Write-Host "Detection Script: $detectionFullPath"
-      } else {
-        Write-Host "Detection Script: Not provided"
-      }
+      if ($detectionFullPath) { Write-Host "Detection Script: $detectionFullPath" } else { Write-Host "Detection Script: Not provided" }
+      Write-Host "App Name: ${{ inputs.app_name }}" # Log the app name being used
       Write-Host "Output Bundle Name: ${{ inputs.output_bundle_name }}"
       Write-Host "Source Bundle Name: ${{ inputs.source_bundle_name }}"
 
       # Execute the script located within the action directory
-      # Note the change from -AppFilePath to -AppSourceFolderPath
+      # Pass all required parameters, including the app name
       ${{ github.action_path }}/Package-IntuneApp.ps1 `
         -AppSourceFolderPath $appSourceFullPath `
         -InstallScriptPath $installFullPath `
         -UninstallScriptPath $uninstallFullPath `
         -DetectionScriptPath $detectionFullPath `
+        -AppName "${{ inputs.app_name }}" ` # <-- Pass the AppName parameter
         -OutputBundleName "${{ inputs.output_bundle_name }}" `
         -SourceBundleName "${{ inputs.source_bundle_name }}"
 
@@ -91,31 +86,26 @@ runs:
       $outputBundlePath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ steps.run_packager.outputs.output_bundle_path }}"
       $templateSourcePath = Join-Path -Path "${{ github.action_path }}" -ChildPath "INSTRUCTIONS.md.eps"
       $templateDestPath = Join-Path -Path $outputBundlePath -ChildPath "INSTRUCTIONS.md.eps"
-
-      # Check if output bundle path exists (should have been created by previous step)
-      if (-not (Test-Path -Path $outputBundlePath -PathType Container)) {
-        Write-Error "Output bundle path '$outputBundlePath' does not exist after packaging script!"
-        exit 1
-      }
-
+      if (-not (Test-Path -Path $outputBundlePath -PathType Container)) { Write-Error "Output bundle path '$outputBundlePath' does not exist!"; exit 1 }
       Write-Host "Copying INSTRUCTIONS template from '$templateSourcePath' to '$templateDestPath'"
       Copy-Item -Path $templateSourcePath -Destination $templateDestPath -Force
 
   # Step 4: Process the INSTRUCTIONS Template using the other action
   - name: Process INSTRUCTIONS Template
-    uses: clstrickland/Template-Processor@v0.1
+    # Ensure this 'uses' points to the correct template processor action
+    # uses: ./.github/actions/process-templates # Example if using local
+    uses: clstrickland/Template-Processor@v0.1 # Using the published one as per your file
     with:
-      # Process the template file we just copied into the output bundle directory
       source_directory: ${{ steps.run_packager.outputs.output_bundle_path }}
       destination_directory: ${{ steps.run_packager.outputs.output_bundle_path }}
       template_extension: '.eps'
-      variables: ${{ steps.run_packager.outputs.instructions_variables }} # Use the multiline variable string
+      variables: ${{ steps.run_packager.outputs.instructions_variables }}
 
   # Step 5: Cleanup INSTRUCTIONS Template File
   - name: Cleanup INSTRUCTIONS Template
     shell: pwsh
     run: |
-      $templatePath = Join-Path -Path (Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ steps.run_packager.outputs.output_bundle_path }}") -ChildPath "INSTRUCTIONS.md.eps"      
+      $templatePath = Join-Path -Path (Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ steps.run_packager.outputs.output_bundle_path }}") -ChildPath "INSTRUCTIONS.md.eps"
       if (Test-Path -Path $templatePath -PathType Leaf) {
         Write-Host "Removing temporary template file: $templatePath"
         Remove-Item -Path $templatePath -Force
