@@ -25,7 +25,9 @@ inputs:
     description: 'Name for the output folder (created in workspace root) containing the source files used for packaging (App and DeploymentScripts folders).'
     required: true
     default: 'IntunePackage_Source'
-
+  app_name:
+    description: 'The application name to use for the .intunewin file and instructions.'
+    required: true
 # --- (Outputs remain the same) ---
 outputs:
   output_bundle_path:
