@@ -113,7 +113,7 @@ runs:
   - name: Cleanup INSTRUCTIONS Template
     shell: pwsh
     run: |
-      $templatePath = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ steps.run_packager.outputs.output_bundle_path }}" -ChildPath "INSTRUCTIONS.md.eps"
+      $templatePath = Join-Path -Path (Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "${{ steps.run_packager.outputs.output_bundle_path }}") -ChildPath "INSTRUCTIONS.md.eps"      
       if (Test-Path -Path $templatePath -PathType Leaf) {
         Write-Host "Removing temporary template file: $templatePath"
         Remove-Item -Path $templatePath -Force
