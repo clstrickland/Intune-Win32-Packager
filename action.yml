@@ -74,7 +74,7 @@ runs:
         -InstallScriptPath $installFullPath `
         -UninstallScriptPath $uninstallFullPath `
         -DetectionScriptPath $detectionFullPath `
-        -AppName "${{ inputs.app_name }}" ` # <-- Pass the AppName parameter
+        -AppName "${{ inputs.app_name }}" `
         -OutputBundleName "${{ inputs.output_bundle_name }}" `
         -SourceBundleName "${{ inputs.source_bundle_name }}"
 
