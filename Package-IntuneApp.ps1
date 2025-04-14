@@ -15,7 +15,7 @@ param(
     [Parameter(Mandatory = $true, HelpMessage = "Name for the output folder containing .intunewin, scripts, instructions.")]
     [string]$OutputBundleName,
     [Parameter(Mandatory = $true, HelpMessage = "Name for the output folder containing source files (App/, DeploymentScripts/).")]
-    [string]$SourceBundleName
+    [string]$SourceBundleName,
     [Parameter(Mandatory = $true, HelpMessage = "The desired application name (used for naming and instructions).")]
     [string]$AppName
 )
