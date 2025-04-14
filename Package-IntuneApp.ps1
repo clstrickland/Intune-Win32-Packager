@@ -106,7 +106,7 @@ try {
         $instructionsVars.DETECTION_RULES_FORMAT = '`Use detection rules configured in a script`'
         $instructionsVars.DETECTION_RULE_GUIDANCE_BLOCK = @"
 - **Detection Method:** Use a **Script** detection rule.
-- **Script file:** Upload the `DeploymentScripts\Detect.ps1` file from this bundle.
+- **Script file:** Upload the `Detect.ps1` file from this bundle.
 - **Run script as 32-bit process on 64-bit clients:** No (Unless required by your script's logic)
 - **Enforce script signature check:** No (Unless your script is signed)
 "@
