@@ -16,6 +16,8 @@ param(
     [string]$OutputBundleName,
     [Parameter(Mandatory = $true, HelpMessage = "Name for the output folder containing source files (App/, DeploymentScripts/).")]
     [string]$SourceBundleName
+    [Parameter(Mandatory = $true, HelpMessage = "The desired application name (used for naming and instructions).")]
+    [string]$AppName
 )
 
 # --- Configuration & Setup (remain the same) ---
@@ -39,7 +41,6 @@ if ($PSBoundParameters.ContainsKey('DetectionScriptPath') -and (-not [string]::I
     $detectionScriptProvided = $true
 }
 
-$appName = Split-Path $AppSourceFolderPath -Leaf
 $stagingDir = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ("IntunePkg_" + [System.Guid]::NewGuid().ToString().Substring(0, 8))
 $stagingAppDir = Join-Path -Path $stagingDir -ChildPath "App"
 $stagingScriptsDir = Join-Path -Path $stagingDir -ChildPath "DeploymentScripts"
@@ -82,7 +83,7 @@ try {
     Write-Host "Creating output bundle folder structure: $outputBundleFullPath"
     if (Test-Path -Path $outputBundleFullPath) { Remove-Item -Path $outputBundleFullPath -Recurse -Force }
     New-Item -ItemType Directory -Path $outputBundleFullPath -Force | Out-Null
-    $finalIntuneWinName = "$appName.intunewin"
+    $finalIntuneWinName = "$AppName.intunewin"
     $finalIntuneWinPath = Join-Path -Path $outputBundleFullPath -ChildPath $finalIntuneWinName
     Write-Host "Moving .intunewin file to $finalIntuneWinPath"
     Move-Item -Path $stagedIntuneWinPath -Destination $finalIntuneWinPath -Force
@@ -93,7 +94,7 @@ try {
     # 6. Prepare Variables for instructions Template
     Write-Host "Preparing variables for instructions template processing..."
     $instructionsVars = @{
-        APP_NAME                  = $appName
+        APP_NAME                  = $AppName
         FINAL_INTUNEWIN_NAME      = $finalIntuneWinName
         INSTALL_COMMAND           = '%windir%\sysnative\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\DeploymentScripts\Install.ps1'
         UNINSTALL_COMMAND         = '%windir%\sysnative\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\DeploymentScripts\Uninstall.ps1'
